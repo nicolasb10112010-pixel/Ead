@@ -17,7 +17,8 @@
       "Bash(git push *)",
       "Bash(git fetch *)",
       "Bash(git rev-list *)",
-      "Bash(cd \"c:/Users/nicol/OneDrive/Desktop/painel ead\" && rm \"src/app/aula/[id]/actions.ts\" && echo \"removido\")"
+      "Bash(cd \"c:/Users/nicol/OneDrive/Desktop/painel ead\" && rm \"src/app/aula/[id]/actions.ts\" && echo \"removido\")",
+      "Bash(node --env-file=.env.local scripts/seed-user.mjs)"
     ],
     "additionalDirectories": [
       "c:\\Users\\nicol\\OneDrive\\Desktop\\painel ead\\src\\app\\aula\\[id]"

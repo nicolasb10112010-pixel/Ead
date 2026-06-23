@@ -1,25 +1,28 @@
 import Link from "next/link";
 import { PlayCircle, Trophy, Coins, TrendingUp } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AiCard } from "@/components/ia/ai-card";
+import { ProgressBar } from "@/components/lessons/progress-bar";
 import { AI_AGENTS } from "@/lib/constants";
+import { getAccountData } from "@/lib/account";
+import { getCourseOverview } from "@/lib/courses";
 
 export const metadata = { title: "Início — Trilogia do Sucesso" };
 
 export default async function InicioPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [account, overview] = await Promise.all([
+    getAccountData(),
+    getCourseOverview(),
+  ]);
 
-  // Nome: usa metadata do usuário; cai para o e-mail como fallback.
-  // (Dados reais de progresso/créditos/conquistas são plugados nas Fases 2-4.)
-  const fullName =
-    (user?.user_metadata?.full_name as string | undefined) ??
-    user?.email?.split("@")[0] ??
-    "aluno";
+  const fullName = account?.fullName ?? "aluno";
+  const credits = account?.credits ?? 0;
+  const achievementsCount = account?.unlockedSlugs.length ?? 0;
+  const pct =
+    overview && overview.totalLessons
+      ? (overview.completedLessons / overview.totalLessons) * 100
+      : 0;
 
   return (
     <div className="space-y-8">
@@ -40,7 +43,7 @@ export default async function InicioPage() {
           </div>
           <div>
             <p className="text-xs text-muted">Progresso geral</p>
-            <p className="text-lg font-semibold">0%</p>
+            <p className="text-lg font-semibold">{Math.round(pct)}%</p>
           </div>
         </Card>
         <Card className="flex items-center gap-4">
@@ -49,7 +52,9 @@ export default async function InicioPage() {
           </div>
           <div>
             <p className="text-xs text-muted">Créditos disponíveis</p>
-            <p className="text-lg font-semibold">0</p>
+            <p className="text-lg font-semibold">
+              {credits.toLocaleString("pt-BR")}
+            </p>
           </div>
         </Card>
         <Card className="flex items-center gap-4">
@@ -58,26 +63,39 @@ export default async function InicioPage() {
           </div>
           <div>
             <p className="text-xs text-muted">Conquistas</p>
-            <p className="text-lg font-semibold">0</p>
+            <p className="text-lg font-semibold">{achievementsCount}</p>
           </div>
         </Card>
       </div>
 
       {/* Continuar assistindo */}
       <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-1 items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2 text-primary">
             <PlayCircle className="h-6 w-6" />
           </div>
-          <div>
+          <div className="flex-1">
             <CardTitle>Continuar assistindo</CardTitle>
-            <CardDescription>
-              Suas aulas aparecerão aqui assim que você começar.
-            </CardDescription>
+            {overview?.nextLesson ? (
+              <CardDescription>{overview.nextLesson.title}</CardDescription>
+            ) : (
+              <CardDescription>
+                Suas aulas aparecerão aqui assim que você começar.
+              </CardDescription>
+            )}
+            {overview && overview.totalLessons > 0 && (
+              <div className="mt-2 max-w-xs">
+                <ProgressBar value={pct} />
+              </div>
+            )}
           </div>
         </div>
-        <Link href="/aulas">
-          <Button>Ir para aulas</Button>
+        <Link
+          href={
+            overview?.nextLesson ? `/aula/${overview.nextLesson.id}` : "/aulas"
+          }
+        >
+          <Button>{overview?.nextLesson ? "Assistir" : "Ir para aulas"}</Button>
         </Link>
       </Card>
 
