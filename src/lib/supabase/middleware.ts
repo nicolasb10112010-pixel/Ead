@@ -1,8 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Rotas públicas que não exigem sessão. */
-const PUBLIC_PATHS = ["/login", "/recuperar-senha", "/criar-senha"];
+/**
+ * Rotas públicas que não exigem sessão.
+ * As rotas /api fazem a própria validação (ex.: o webhook do Mercado Pago é
+ * chamado sem sessão; /api/ia/chat valida o usuário internamente).
+ */
+const PUBLIC_PATHS = ["/login", "/recuperar-senha", "/criar-senha", "/api"];
 
 /**
  * Renova a sessão Supabase a cada requisição e protege as rotas privadas.

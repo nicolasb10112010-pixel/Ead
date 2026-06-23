@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Lock } from "lucide-react";
+import { Menu, X, Lock, Shield } from "lucide-react";
 import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { LogoutButton } from "./logout-button";
@@ -12,7 +12,7 @@ import { LogoutButton } from "./logout-button";
  * Navegação mobile: barra superior com botão de menu + drawer lateral.
  * Sem hover/animações pesadas (regra do mobile).
  */
-export function MobileNav() {
+export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -74,6 +74,22 @@ export function MobileNav() {
                   </Link>
                 );
               })}
+
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
+                    pathname.startsWith("/admin")
+                      ? "bg-primary/15 text-foreground"
+                      : "text-muted hover:bg-surface-2"
+                  )}
+                >
+                  <Shield className="h-4 w-4" />
+                  <span className="flex-1">Admin</span>
+                </Link>
+              )}
             </nav>
             <div className="border-t border-border pt-2">
               <LogoutButton />

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Lock } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
 import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { LogoutButton } from "./logout-button";
 
 /** Menu lateral fixo — visível apenas no desktop (md+). */
-export function Sidebar() {
+export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -46,6 +46,21 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              "group mt-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
+              pathname.startsWith("/admin")
+                ? "bg-primary/15 text-foreground"
+                : "text-muted hover:bg-surface-2 hover:text-foreground"
+            )}
+          >
+            <Shield className="h-4 w-4 shrink-0" />
+            <span className="flex-1">Admin</span>
+          </Link>
+        )}
       </nav>
 
       <div className="px-3 py-4 border-t border-border">

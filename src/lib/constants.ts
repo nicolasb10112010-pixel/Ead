@@ -102,6 +102,29 @@ export const AI_CREDIT_COST = {
   file: 40,
 } as const;
 
+export const SUPPORT_CATEGORIES = [
+  { value: "duvida_aula", label: "Dúvida sobre aula" },
+  { value: "acesso", label: "Problema de acesso" },
+  { value: "pagamento", label: "Problema com pagamento" },
+  { value: "duvida_ia", label: "Dúvida sobre IA" },
+  { value: "outro", label: "Outro" },
+] as const;
+
+export const TICKET_STATUS: Record<
+  string,
+  { label: string; className: string }
+> = {
+  open: { label: "Aberto", className: "bg-accent/15 text-accent" },
+  answered: { label: "Respondido", className: "bg-primary/15 text-primary" },
+  closed: { label: "Fechado", className: "bg-surface-2 text-muted" },
+};
+
+export function categoryLabel(value: string) {
+  return (
+    SUPPORT_CATEGORIES.find((c) => c.value === value)?.label ?? value
+  );
+}
+
 export function formatBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", {
     style: "currency",
