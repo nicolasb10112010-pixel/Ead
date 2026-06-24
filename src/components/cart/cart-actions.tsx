@@ -92,18 +92,25 @@ export function CheckoutButtons({
       )}
       <div className="flex flex-col gap-3 sm:flex-row">
         <Button
-          className="flex-1"
+          size="lg"
+          className="h-14 flex-1 text-base font-semibold"
           onClick={buy}
           disabled={pending || !!blockedReason}
         >
           {pending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-5 w-5" />
           )}
           Ir para pagamento
         </Button>
-        <Button variant="outline" onClick={cancel} disabled={pending}>
+        <Button
+          size="lg"
+          variant="outline"
+          className="h-14 sm:w-40"
+          onClick={cancel}
+          disabled={pending}
+        >
           Cancelar
         </Button>
       </div>
