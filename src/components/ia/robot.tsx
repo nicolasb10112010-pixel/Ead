@@ -63,7 +63,7 @@ function RobotFriendly() {
 /* IA 2 — técnico/bloqueado, visor com scan, cadeado, braços cruzados. */
 function RobotLocked() {
   return (
-    <g className="robot-float robot-shake">
+    <g className="robot-shake">
       {/* antenas */}
       <line x1="44" y1="30" x2="40" y2="22" stroke="currentColor" strokeWidth="3" />
       <line x1="76" y1="30" x2="80" y2="22" stroke="currentColor" strokeWidth="3" />

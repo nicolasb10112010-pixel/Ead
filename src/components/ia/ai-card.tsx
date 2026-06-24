@@ -10,30 +10,31 @@ import { cn } from "@/lib/utils";
 const LOCKED_MESSAGE =
   "Essa IA ainda está em breve. Continue evoluindo na Trilogia do Sucesso para desbloquear novas inteligências.";
 
-/** Configuração visual por agente (robô, cor de energia, glow). */
+/** Configuração visual por agente. IA 1 = verde; IA 2 e IA 3 = vermelho. */
 function styleFor(slug: string, active: boolean) {
   if (active)
     return {
       variant: 1 as const,
       accent: "#34d399", // verde
-      glow: "rgba(52,211,153,0.30)",
-      ring: "group-hover:ring-[#34d399]/50",
       badge: "bg-[#34d399]/15 text-[#34d399]",
+      // borda/sombra verde só no hover
+      hover:
+        "hover:border-[#34d399]/50 hover:shadow-[0_0_30px_-10px_rgba(52,211,153,0.55)]",
+      // glow verde suave (não cobre o card inteiro)
+      overlay:
+        "radial-gradient(140px 140px at 26% 50%, rgba(52,211,153,0.22), transparent 70%)",
     };
-  if (slug === "ia-2")
-    return {
-      variant: 2 as const,
-      accent: "#f87171", // vermelho
-      glow: "rgba(248,113,113,0.28)",
-      ring: "group-hover:ring-[#f87171]/50",
-      badge: "bg-[#f87171]/15 text-[#f87171]",
-    };
+
+  // IA 2 e IA 3 — mesmo padrão VERMELHO de bloqueio.
   return {
-    variant: 3 as const,
-    accent: "#a855f7", // roxo/vermelho
-    glow: "rgba(168,85,247,0.30)",
-    ring: "group-hover:ring-[#a855f7]/50",
-    badge: "bg-[#a855f7]/15 text-[#a855f7]",
+    variant: (slug === "ia-2" ? 2 : 3) as 2 | 3,
+    accent: "#f87171", // vermelho
+    badge: "bg-[#f87171]/15 text-[#f87171]",
+    hover:
+      "hover:border-[#f87171]/60 hover:shadow-[0_0_34px_-8px_rgba(248,113,113,0.6)]",
+    // overlay vermelho que cobre o CARD INTEIRO no hover
+    overlay:
+      "linear-gradient(135deg, rgba(127,29,29,0.62) 0%, rgba(220,38,38,0.30) 45%, rgba(248,113,113,0.10) 100%)",
   };
 }
 
@@ -51,18 +52,15 @@ export function AiCard({ agent }: { agent: AiAgent }) {
     <>
       <div
         className={cn(
-          "group relative flex overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-2 p-4 transition-all duration-300",
-          "ring-1 ring-transparent hover:-translate-y-1",
-          s.ring
+          "group relative flex overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-2 p-4 transition-all duration-300 hover:-translate-y-1",
+          s.hover
         )}
         style={{ minHeight: 180 }}
       >
-        {/* glow de energia (aparece no hover do desktop) */}
+        {/* Overlay de hover (verde sutil na IA 1; vermelho no card inteiro nas bloqueadas) */}
         <div
-          className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          style={{
-            background: `radial-gradient(120px 120px at 25% 50%, ${s.glow}, transparent 70%)`,
-          }}
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          style={{ background: s.overlay }}
         />
 
         {/* lado esquerdo: robô grande */}
@@ -80,7 +78,9 @@ export function AiCard({ agent }: { agent: AiAgent }) {
             <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-medium", s.badge)}>
               {active ? "Liberada" : "Em breve"}
             </span>
-            {!active && <Lock className="h-4 w-4 text-muted" />}
+            {!active && (
+              <Lock className="h-4 w-4 text-[#f87171] transition-transform duration-300 group-hover:scale-125" />
+            )}
           </div>
 
           <h3 className="mt-2 text-lg font-semibold">{agent.name}</h3>
@@ -99,7 +99,7 @@ export function AiCard({ agent }: { agent: AiAgent }) {
             ) : (
               <button
                 onClick={showLocked}
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium text-muted"
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium text-muted transition-colors group-hover:border-[#f87171]/50 group-hover:text-[#f87171]"
               >
                 <Lock className="h-4 w-4" /> Bloqueada
               </button>
