@@ -108,23 +108,23 @@ body {
   }
   .group:hover .robot-float,
   .group:focus-within .robot-float {
-    animation: robotFloat 4.5s ease-in-out infinite;
+    animation: robotFloat 7s ease-in-out infinite;
   }
   .group:hover .robot-arm,
   .group:focus-within .robot-arm {
-    animation: robotWave 1.8s ease-in-out infinite;
+    animation: robotWave 3.2s ease-in-out infinite;
   }
   .group:hover .robot-shake,
   .group:focus-within .robot-shake {
-    animation: robotShake 1.8s ease-in-out infinite;
+    animation: robotShake 3.2s ease-in-out infinite;
   }
   .group:hover .robot-eye,
   .group:focus-within .robot-eye {
-    animation: robotScan 2.6s ease-in-out infinite;
+    animation: robotScan 4s ease-in-out infinite;
   }
   .group:hover .robot-ring,
   .group:focus-within .robot-ring {
-    animation: robotSpin 7s linear infinite;
+    animation: robotSpin 14s linear infinite;
   }
 }
 
