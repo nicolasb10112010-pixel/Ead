@@ -52,19 +52,19 @@ export function AiCard({ agent }: { agent: AiAgent }) {
     <>
       <div
         className={cn(
-          "group relative flex overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-2 p-4 transition-all duration-300 hover:-translate-y-1",
+          "group relative flex overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-surface to-surface-2 p-4 transition-[border-color,box-shadow,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5",
           s.hover
         )}
         style={{ minHeight: 180 }}
       >
         {/* Overlay de hover (verde sutil na IA 1; vermelho no card inteiro nas bloqueadas) */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+          className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-100 group-focus-within:opacity-100"
           style={{ background: s.overlay }}
         />
 
-        {/* lado esquerdo: robô grande */}
-        <div className="relative flex w-2/5 items-center justify-center">
+        {/* lado esquerdo: robô grande (o ZOOM é só neste container, não no card) */}
+        <div className="robot-zoom relative flex w-2/5 items-center justify-center">
           <Robot
             variant={s.variant}
             accent={s.accent}
@@ -79,7 +79,7 @@ export function AiCard({ agent }: { agent: AiAgent }) {
               {active ? "Liberada" : "Em breve"}
             </span>
             {!active && (
-              <Lock className="h-4 w-4 text-[#f87171] transition-transform duration-300 group-hover:scale-125" />
+              <Lock className="h-4 w-4 text-[#f87171] transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110 group-focus-within:scale-110" />
             )}
           </div>
 
@@ -92,14 +92,14 @@ export function AiCard({ agent }: { agent: AiAgent }) {
             {active ? (
               <Link
                 href={`/ia/${agent.slug}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#34d399] px-3.5 py-2 text-sm font-medium text-black transition-transform group-hover:scale-[1.03]"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#34d399] px-3.5 py-2 text-sm font-medium text-black transition-shadow duration-700 group-hover:shadow-[0_0_18px_-4px_#34d399]"
               >
                 Acessar IA 1 <ArrowRight className="h-4 w-4" />
               </Link>
             ) : (
               <button
                 onClick={showLocked}
-                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium text-muted transition-colors group-hover:border-[#f87171]/50 group-hover:text-[#f87171]"
+                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-surface-2 px-3.5 py-2 text-sm font-medium text-muted transition-colors duration-700 group-hover:border-[#f87171]/50 group-hover:text-[#f87171] group-focus-within:border-[#f87171]/50 group-focus-within:text-[#f87171]"
               >
                 <Lock className="h-4 w-4" /> Bloqueada
               </button>
