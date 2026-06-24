@@ -20,7 +20,8 @@
       "Bash(cd \"c:/Users/nicol/OneDrive/Desktop/painel ead\" && rm \"src/app/aula/[id]/actions.ts\" && echo \"removido\")",
       "Bash(node --env-file=.env.local scripts/seed-user.mjs)",
       "Bash(node --env-file=.env.local -e \"const t=process.env.MP_ACCESS_TOKEN||''; console.log\\('MP_ACCESS_TOKEN definido?', t.length>0\\); console.log\\('prefixo:', t.slice\\(0,8\\)\\); console.log\\('parece de teste \\(TEST-\\)?', t.startsWith\\('TEST-'\\)\\);\")",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(node --env-file=.env.local scripts/seed-admin.mjs)"
     ],
     "additionalDirectories": [
       "c:\\Users\\nicol\\OneDrive\\Desktop\\painel ead\\src\\app\\aula\\[id]"
