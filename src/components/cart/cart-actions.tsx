@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Trash2, ShoppingCart, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { removeFromCart, clearCart, addToCart } from "@/lib/actions/cart";
-import { startCheckout } from "@/lib/actions/checkout";
+import { createCreditOrder } from "@/lib/actions/checkout";
 
 export function RemoveItemButton({ slug }: { slug: string }) {
   const router = useRouter();
@@ -68,10 +68,10 @@ export function CheckoutButtons({
     }
     setError(null);
     start(async () => {
-      const res = await startCheckout();
+      const res = await createCreditOrder();
       if (res.ok) {
-        // Redireciona para o checkout externo do Mercado Pago.
-        window.location.href = res.initPoint;
+        // Checkout INTERNO (sem sair da plataforma).
+        router.push(`/carrinho/pagamento?order=${res.orderId}`);
       } else {
         setError(res.error);
       }
@@ -101,7 +101,7 @@ export function CheckoutButtons({
           ) : (
             <ShoppingCart className="h-4 w-4" />
           )}
-          Comprar
+          Ir para pagamento
         </Button>
         <Button variant="outline" onClick={cancel} disabled={pending}>
           Cancelar

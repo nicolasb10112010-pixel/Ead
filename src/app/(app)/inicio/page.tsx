@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PlayCircle, Trophy, Coins, TrendingUp } from "lucide-react";
+import { PlayCircle, Trophy, Coins, TrendingUp, Zap } from "lucide-react";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AiCard } from "@/components/ia/ai-card";
@@ -34,6 +34,29 @@ export default async function InicioPage() {
           Continue de onde parou e avance na sua jornada.
         </p>
       </div>
+
+      {/* Destaque dos créditos de IA */}
+      <Card className="flex flex-col gap-4 border-accent/30 bg-gradient-to-r from-accent/10 to-transparent sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/15 text-accent shadow-[0_0_24px_-8px_var(--accent)]">
+            <Zap className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-xs text-muted">Seus créditos de IA</p>
+            <p className="text-2xl font-bold text-accent">
+              {credits.toLocaleString("pt-BR")}{" "}
+              <span className="text-sm font-normal text-muted">
+                créditos disponíveis
+              </span>
+            </p>
+          </div>
+        </div>
+        <Link href="/creditos">
+          <Button variant="outline">
+            <Coins className="h-4 w-4" /> Comprar mais créditos
+          </Button>
+        </Link>
+      </Card>
 
       {/* Métricas rápidas */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

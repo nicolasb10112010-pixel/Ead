@@ -88,11 +88,12 @@ export type CreditPackage = {
   name: string;
   credits: number;
   priceCents: number;
+  isPopular?: boolean;
 };
 
 export const CREDIT_PACKAGES: CreditPackage[] = [
   { slug: "pacote-1000", name: "Pacote Inicial", credits: 1000, priceCents: 2990 },
-  { slug: "pacote-3000", name: "Pacote Plus", credits: 3000, priceCents: 6990 },
+  { slug: "pacote-3000", name: "Pacote Plus", credits: 3000, priceCents: 6990, isPopular: true },
   { slug: "pacote-10000", name: "Pacote Pro", credits: 10000, priceCents: 19990 },
 ];
 

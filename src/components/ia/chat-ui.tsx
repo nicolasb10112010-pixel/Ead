@@ -13,6 +13,7 @@ import {
   X,
   Bot,
   MessageSquare,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AI_CREDIT_COST } from "@/lib/constants";
@@ -186,19 +187,24 @@ export function ChatUI({
 
       {/* Painel do chat */}
       <div className="flex flex-1 flex-col rounded-2xl border border-border bg-surface/40">
-        {/* Saldo */}
+        {/* Saldo — destaque premium no topo (número grande). */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-muted">
-            <Coins className="h-4 w-4 text-accent" />
-            <span>
-              {balance.toLocaleString("pt-BR")} créditos
-            </span>
-          </div>
           <Link href="/creditos">
             <Button size="sm" variant="ghost">
               Comprar créditos
             </Button>
           </Link>
+          <div className="flex items-center gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-2 shadow-[0_0_24px_-8px_var(--accent)]">
+            <Zap className="h-6 w-6 text-accent" />
+            <div className="leading-none">
+              <div className="text-2xl font-bold tracking-tight text-accent">
+                {balance.toLocaleString("pt-BR")}
+              </div>
+              <div className="mt-0.5 text-[11px] text-muted">
+                créditos disponíveis
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Mensagens */}
@@ -247,7 +253,8 @@ export function ChatUI({
         {blocked ? (
           <div className="border-t border-border p-4 text-center">
             <p className="text-sm text-muted">
-              Você está sem créditos para conversar com a IA.
+              Você ficou sem créditos para usar a IA. Compre mais créditos para
+              continuar.
             </p>
             <Link href="/creditos">
               <Button className="mt-3">

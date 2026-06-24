@@ -72,8 +72,10 @@ export async function createPreference(opts: {
 
 export type MpPayment = {
   id: string;
-  status: string; // approved, pending, rejected...
+  status: string; // approved, pending, in_process, rejected...
+  statusDetail?: string | null;
   externalReference: string | null;
+  amountCents: number | null;
 };
 
 /** Consulta um pagamento pelo id (fonte autoritativa do status). */
@@ -86,6 +88,66 @@ export async function getPayment(paymentId: string): Promise<MpPayment | null> {
   return {
     id: String(data.id),
     status: data.status,
+    statusDetail: data.status_detail ?? null,
     externalReference: data.external_reference ?? null,
+    amountCents:
+      typeof data.transaction_amount === "number"
+        ? Math.round(data.transaction_amount * 100)
+        : null,
+  };
+}
+
+/**
+ * Cria um pagamento via Checkout Transparente (Payment Brick).
+ * Recebe o `formData` que o Payment Brick monta no front (token, método,
+ * parcelas, pagador) e cria o pagamento no servidor com o Access Token.
+ * O Access Token NUNCA vai ao front.
+ */
+export async function createPayment(opts: {
+  orderId: string;
+  amountCents: number;
+  description: string;
+  idempotencyKey: string;
+  formData: Record<string, unknown>;
+}): Promise<MpPayment> {
+  const fd = opts.formData;
+  const body = {
+    transaction_amount: Number((opts.amountCents / 100).toFixed(2)),
+    description: opts.description,
+    external_reference: opts.orderId,
+    token: fd.token,
+    payment_method_id: fd.payment_method_id,
+    issuer_id: fd.issuer_id,
+    installments: fd.installments ?? 1,
+    payer: fd.payer,
+  };
+
+  const res = await fetch(`${MP_API}/v1/payments`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token()}`,
+      "Content-Type": "application/json",
+      // Idempotência no lado do MP também.
+      "X-Idempotency-Key": opts.idempotencyKey,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      `Falha ao criar pagamento MP: ${res.status} ${JSON.stringify(data)}`
+    );
+  }
+
+  return {
+    id: String(data.id),
+    status: data.status,
+    statusDetail: data.status_detail ?? null,
+    externalReference: data.external_reference ?? null,
+    amountCents:
+      typeof data.transaction_amount === "number"
+        ? Math.round(data.transaction_amount * 100)
+        : null,
   };
 }

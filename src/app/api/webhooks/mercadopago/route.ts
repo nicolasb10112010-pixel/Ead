@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPayment } from "@/lib/gateways/mercadopago";
 import { createAdminClient } from "@/lib/supabase/server";
+import { processPayment } from "@/lib/payments";
 
 export const runtime = "nodejs";
 
@@ -40,73 +41,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ignored: "sem id" });
   }
 
-  // 2. Consulta o pagamento na API do MP.
+  // 2. Consulta o pagamento na API do MP (fonte autoritativa do status).
   const payment = await getPayment(String(paymentId));
   if (!payment) {
     // Não encontrado agora → peça retry ao MP.
     return NextResponse.json({ error: "pagamento não encontrado" }, { status: 404 });
   }
 
+  // 3. Processa de forma idempotente (mesmo helper da API de pagamento).
   const admin = createAdminClient();
-
-  // 3. Idempotência: registra o evento; se já existir, ignora.
-  const { error: evtErr } = await admin.from("payment_events").insert({
-    provider: "mercadopago",
-    event_type: "payment",
-    provider_event_id: payment.id,
-    order_id: payment.externalReference,
-    raw: payment,
-  });
-  if (evtErr) {
-    // 23505 = unique_violation → já processado.
-    if (evtErr.code === "23505") {
-      return NextResponse.json({ ok: true, duplicate: true });
-    }
-    // Outro erro de DB → retry.
-    return NextResponse.json({ error: evtErr.message }, { status: 500 });
-  }
-
-  // 4. Só credita se aprovado e com pedido vinculado.
-  if (payment.status !== "approved" || !payment.externalReference) {
-    return NextResponse.json({ ok: true, status: payment.status });
-  }
-
-  const { data: order } = await admin
-    .from("orders")
-    .select("id, user_id, credits_total, status")
-    .eq("id", payment.externalReference)
-    .maybeSingle();
-
-  if (!order) return NextResponse.json({ ok: true, note: "pedido inexistente" });
-  if (order.status === "paid")
-    return NextResponse.json({ ok: true, note: "já pago" });
-
-  // 5. Credita o aluno (atômico) e marca o pedido como pago.
-  await admin.rpc("add_credits_for", {
-    p_user_id: order.user_id,
-    p_amount: order.credits_total,
-    p_type: "purchase",
-    p_reason: `order:${order.id}`,
-  });
-
-  await admin
-    .from("orders")
-    .update({
-      status: "paid",
-      paid_at: new Date().toISOString(),
-      provider_payment_id: payment.id,
-    })
-    .eq("id", order.id);
-
-  // 6. Esvazia o carrinho do comprador.
-  const { data: cart } = await admin
-    .from("carts")
-    .select("id")
-    .eq("user_id", order.user_id)
-    .maybeSingle();
-  if (cart) await admin.from("cart_items").delete().eq("cart_id", cart.id);
-
-  return NextResponse.json({ ok: true, credited: order.credits_total });
+  const result = await processPayment(admin, payment);
+  return NextResponse.json(result);
 }
 
 // MP às vezes faz GET de verificação.

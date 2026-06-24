@@ -2,16 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getCart } from "@/lib/cart";
-import { createPreference } from "@/lib/gateways/mercadopago";
 import { UPSELL_REQUIRES_MAIN_MESSAGE } from "@/lib/constants";
 
 /**
- * Finaliza o carrinho: cria um pedido `pending` e uma preferência de
- * pagamento no Mercado Pago. Retorna a URL de checkout para redirecionar.
- * Os créditos só são adicionados depois, pelo webhook (pagamento aprovado).
+ * Cria um pedido `pending` a partir do carrinho (com order_items) e retorna
+ * o id. NÃO redireciona para fora: o pagamento acontece dentro da plataforma
+ * (Payment Brick). Os créditos só entram depois, via webhook/API (approved).
  */
-export async function startCheckout(): Promise<
-  { ok: true; initPoint: string } | { ok: false; error: string }
+export async function createCreditOrder(): Promise<
+  { ok: true; orderId: string } | { ok: false; error: string }
 > {
   const supabase = await createClient();
   const {
@@ -23,12 +22,10 @@ export async function startCheckout(): Promise<
   if (cart.items.length === 0)
     return { ok: false, error: "Seu carrinho está vazio." };
 
-  // Validação de segurança (back-end): nunca permitir comprar só upsell.
-  if (cart.onlyUpsell) {
-    return { ok: false, error: UPSELL_REQUIRES_MAIN_MESSAGE };
-  }
+  // Segurança: nunca permitir comprar só upsell.
+  if (cart.onlyUpsell) return { ok: false, error: UPSELL_REQUIRES_MAIN_MESSAGE };
 
-  // 1. Cria o pedido (pending) com snapshot dos itens.
+  // 1. Cria o pedido.
   const { data: order, error } = await supabase
     .from("orders")
     .insert({
@@ -41,43 +38,47 @@ export async function startCheckout(): Promise<
         credits: i.credits,
         quantity: i.quantity,
         price_cents: i.priceCents,
+        is_upsell: i.isUpsell,
       })),
       provider: "mercadopago",
     })
     .select("id")
     .single();
 
-  if (error || !order)
-    return { ok: false, error: "Falha ao criar o pedido." };
+  if (error || !order) return { ok: false, error: "Falha ao criar o pedido." };
 
-  // 2. Cria a preferência de pagamento.
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  // 2. order_items: insere os principais primeiro, depois os upsells
+  //    apontando parent_item_id para o primeiro item principal.
+  const mains = cart.items.filter((i) => !i.isUpsell);
+  const upsells = cart.items.filter((i) => i.isUpsell);
 
-  try {
-    const pref = await createPreference({
-      orderId: order.id,
-      siteUrl,
-      payerEmail: user.email ?? undefined,
-      items: cart.items.map((i) => ({
-        title: i.name,
-        quantity: i.quantity,
-        unitPriceCents: i.priceCents,
-      })),
-    });
+  const { data: insertedMains } = await supabase
+    .from("order_items")
+    .insert(
+      mains.map((i) => ({
+        order_id: order.id,
+        package_slug: i.slug,
+        credits: i.credits * i.quantity,
+        price_cents: i.priceCents * i.quantity,
+        is_upsell: false,
+      }))
+    )
+    .select("id");
 
-    await supabase
-      .from("orders")
-      .update({ provider_preference_id: pref.id })
-      .eq("id", order.id);
+  const parentId = insertedMains?.[0]?.id ?? null;
 
-    return { ok: true, initPoint: pref.initPoint };
-  } catch (e) {
-    await supabase.from("orders").update({ status: "failed" }).eq("id", order.id);
-    return {
-      ok: false,
-      error:
-        e instanceof Error ? e.message : "Falha ao iniciar o checkout.",
-    };
+  if (upsells.length > 0) {
+    await supabase.from("order_items").insert(
+      upsells.map((i) => ({
+        order_id: order.id,
+        package_slug: i.slug,
+        credits: i.credits * i.quantity,
+        price_cents: i.priceCents * i.quantity,
+        is_upsell: true,
+        parent_item_id: parentId,
+      }))
+    );
   }
+
+  return { ok: true, orderId: order.id };
 }
