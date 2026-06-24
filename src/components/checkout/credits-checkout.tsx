@@ -23,14 +23,25 @@ let mpInitialized = false;
 export function CreditsCheckout({
   orderId,
   amountCents,
+  successHref = "/ia/ia-1",
+  successLabel = "Ir para a IA 1",
 }: {
   orderId: string;
   amountCents: number;
+  successHref?: string;
+  successLabel?: string;
 }) {
   const [status, setStatus] = useState<Status>("idle");
 
   if (status !== "idle") {
-    return <PaymentState status={status} onRetry={() => setStatus("idle")} />;
+    return (
+      <PaymentState
+        status={status}
+        onRetry={() => setStatus("idle")}
+        successHref={successHref}
+        successLabel={successLabel}
+      />
+    );
   }
 
   // Sem Public Key → modo DEV/mock (aviso claro). Com Public Key → Brick real.
@@ -45,9 +56,13 @@ export function CreditsCheckout({
 function PaymentState({
   status,
   onRetry,
+  successHref,
+  successLabel,
 }: {
   status: Status;
   onRetry: () => void;
+  successHref: string;
+  successLabel: string;
 }) {
   const map = {
     processing: {
@@ -102,8 +117,8 @@ function PaymentState({
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         {status === "approved" ? (
           <>
-            <Link href="/ia/ia-1">
-              <Button>Ir para a IA 1</Button>
+            <Link href={successHref}>
+              <Button>{successLabel}</Button>
             </Link>
             <Link href="/inicio">
               <Button variant="outline">Início</Button>

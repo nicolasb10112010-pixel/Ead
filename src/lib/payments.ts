@@ -50,7 +50,7 @@ export async function processPayment(
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, user_id, credits_total, amount_cents, status")
+    .select("id, user_id, credits_total, amount_cents, status, course_id")
     .eq("id", payment.externalReference)
     .maybeSingle();
 
@@ -83,7 +83,19 @@ export async function processPayment(
     return { ok: false, reason: "valor divergente" };
   }
 
-  // 4. Credita o aluno e marca o pedido como pago.
+  // 4a. Pedido de CURSO → cria a matrícula ativa (acesso ao conteúdo).
+  if (order.course_id) {
+    await admin.from("enrollments").upsert(
+      {
+        user_id: order.user_id,
+        course_id: order.course_id,
+        status: "active",
+      },
+      { onConflict: "user_id,course_id" }
+    );
+  }
+
+  // 4b. Pedido de CRÉDITOS → credita (add_credits_for ignora amount<=0).
   await admin.rpc("add_credits_for", {
     p_user_id: order.user_id,
     p_amount: order.credits_total,

@@ -115,10 +115,10 @@ export default async function InicioPage() {
         </div>
         <Link
           href={
-            overview?.nextLesson ? `/aula/${overview.nextLesson.id}` : "/aulas"
+            overview?.nextLesson ? `/aula/${overview.nextLesson.id}` : "/cursos"
           }
         >
-          <Button>{overview?.nextLesson ? "Assistir" : "Ir para aulas"}</Button>
+          <Button>{overview?.nextLesson ? "Assistir" : "Ver cursos"}</Button>
         </Link>
       </Card>
 

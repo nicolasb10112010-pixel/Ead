@@ -91,6 +91,51 @@ export async function adminSetEnrollment(
   return { ok: true };
 }
 
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/** Admin cria um novo curso (publicado, com preço em centavos). */
+export async function adminCreateCourse(input: {
+  title: string;
+  priceCents: number;
+  description?: string;
+}) {
+  if (!input.title.trim()) return { ok: false, error: "Informe o título." };
+  let admin;
+  try {
+    ({ admin } = await requireAdmin());
+  } catch {
+    return { ok: false, error: "Acesso negado." };
+  }
+
+  const base = slugify(input.title) || "curso";
+  // Sufixo curto para evitar colisão de slug.
+  const slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const { count } = await admin
+    .from("courses")
+    .select("id", { count: "exact", head: true });
+
+  const { error } = await admin.from("courses").insert({
+    slug,
+    title: input.title.trim(),
+    description: input.description?.trim() || null,
+    price_cents: Math.max(0, Math.floor(input.priceCents)),
+    position: (count ?? 0) + 1,
+    is_published: true,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/conteudo");
+  return { ok: true, slug };
+}
+
 /** Admin cria um módulo. */
 export async function adminCreateModule(courseId: string, title: string) {
   if (!title.trim()) return { ok: false, error: "Informe o título." };

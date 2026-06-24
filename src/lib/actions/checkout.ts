@@ -82,3 +82,63 @@ export async function createCreditOrder(): Promise<
 
   return { ok: true, orderId: order.id };
 }
+
+/**
+ * Cria um pedido `pending` para a compra de um CURSO (pago em R$).
+ * Os créditos não entram aqui; a matrícula é criada pelo webhook quando o
+ * pagamento for aprovado.
+ */
+export async function createCourseOrder(
+  courseSlug: string
+): Promise<{ ok: true; orderId: string } | { ok: false; error: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessão expirada." };
+
+  const { data: course } = await supabase
+    .from("courses")
+    .select("id, title, price_cents, is_published")
+    .eq("slug", courseSlug)
+    .maybeSingle();
+
+  if (!course || !course.is_published)
+    return { ok: false, error: "Curso indisponível." };
+  if (course.price_cents <= 0)
+    return { ok: false, error: "Este curso não está à venda." };
+
+  // Já matriculado?
+  const { data: enr } = await supabase
+    .from("enrollments")
+    .select("status")
+    .eq("user_id", user.id)
+    .eq("course_id", course.id)
+    .maybeSingle();
+  if (enr?.status === "active")
+    return { ok: false, error: "Você já tem acesso a este curso." };
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .insert({
+      user_id: user.id,
+      status: "pending",
+      amount_cents: course.price_cents,
+      credits_total: 0,
+      course_id: course.id,
+      items: [
+        {
+          type: "course",
+          slug: courseSlug,
+          title: course.title,
+          price_cents: course.price_cents,
+        },
+      ],
+      provider: "mercadopago",
+    })
+    .select("id")
+    .single();
+
+  if (error || !order) return { ok: false, error: "Falha ao criar o pedido." };
+  return { ok: true, orderId: order.id };
+}

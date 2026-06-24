@@ -8,7 +8,52 @@ import {
   adminCreateModule,
   adminCreateLesson,
   adminUpdateLesson,
+  adminCreateCourse,
 } from "@/lib/actions/admin";
+
+export function CreateCourseForm() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState("");
+  const [pending, start] = useTransition();
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Nome do novo curso"
+        className="flex-1 rounded-xl border border-border bg-surface-2 px-4 h-11 text-sm outline-none focus:ring-2 focus:ring-primary/60"
+      />
+      <input
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        type="number"
+        placeholder="Preço R$ (ex: 97)"
+        className="w-40 rounded-xl border border-border bg-surface-2 px-4 h-11 text-sm outline-none focus:ring-2 focus:ring-primary/60"
+      />
+      <Button
+        disabled={pending || !title.trim()}
+        onClick={() =>
+          start(async () => {
+            const reais = parseFloat(price.replace(",", ".")) || 0;
+            const res = await adminCreateCourse({
+              title,
+              priceCents: Math.round(reais * 100),
+            });
+            setTitle("");
+            setPrice("");
+            if (res.ok && res.slug) router.push(`/admin/conteudo?course=${res.slug}`);
+            else router.refresh();
+          })
+        }
+      >
+        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        Criar curso
+      </Button>
+    </div>
+  );
+}
 
 export function AddModuleForm({ courseId }: { courseId: string }) {
   const router = useRouter();

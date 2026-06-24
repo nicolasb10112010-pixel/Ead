@@ -27,7 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   // "Sua conta" propositalmente acima de "Início".
   { label: "Sua conta", href: "/conta", icon: User },
   { label: "Início", href: "/inicio", icon: Home },
-  { label: "Aulas", href: "/aulas", icon: PlayCircle },
+  { label: "Cursos", href: "/cursos", icon: PlayCircle },
   { label: "IA 1", href: "/ia/ia-1", icon: Bot },
   { label: "IA 2", href: "/ia/ia-2", icon: Bot, locked: true, badge: "Em breve" },
   { label: "IA 3", href: "/ia/ia-3", icon: Bot, locked: true, badge: "Em breve" },

@@ -6,6 +6,148 @@ import type {
   ModuleWithLessons,
 } from "@/lib/types";
 
+export type StoreCourse = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  cover_url: string | null;
+  price_cents: number;
+  enrolled: boolean;
+};
+
+/** Catálogo: todos os cursos publicados + se o aluno já tem cada um. */
+export async function getCoursesForStore(): Promise<StoreCourse[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: courses } = await supabase
+    .from("courses")
+    .select("id, slug, title, description, cover_url, price_cents, position")
+    .eq("is_published", true)
+    .order("position", { ascending: true });
+
+  const { data: enrolls } = await supabase
+    .from("enrollments")
+    .select("course_id, status")
+    .eq("user_id", user.id);
+
+  const enrolledSet = new Set(
+    (enrolls ?? []).filter((e) => e.status === "active").map((e) => e.course_id)
+  );
+
+  return (courses ?? []).map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    title: c.title,
+    description: c.description,
+    cover_url: c.cover_url,
+    price_cents: c.price_cents,
+    enrolled: enrolledSet.has(c.id),
+  }));
+}
+
+/**
+ * Detalhe de um curso pelo slug: info + se está matriculado + (se sim)
+ * módulos/aulas com progresso. RLS só devolve aulas se houver matrícula.
+ */
+export async function getCourseDetail(slug: string): Promise<{
+  course: StoreCourse;
+  enrolled: boolean;
+  modules: ModuleWithLessons[];
+  totalLessons: number;
+  completedLessons: number;
+  nextLesson: { id: string; title: string } | null;
+} | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: course } = await supabase
+    .from("courses")
+    .select("id, slug, title, description, cover_url, price_cents")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!course) return null;
+
+  const { data: enr } = await supabase
+    .from("enrollments")
+    .select("status")
+    .eq("user_id", user.id)
+    .eq("course_id", course.id)
+    .maybeSingle();
+  const enrolled = enr?.status === "active";
+
+  const storeCourse: StoreCourse = {
+    id: course.id,
+    slug: course.slug,
+    title: course.title,
+    description: course.description,
+    cover_url: course.cover_url,
+    price_cents: course.price_cents,
+    enrolled,
+  };
+
+  if (!enrolled) {
+    return {
+      course: storeCourse,
+      enrolled: false,
+      modules: [],
+      totalLessons: 0,
+      completedLessons: 0,
+      nextLesson: null,
+    };
+  }
+
+  const { data: modules } = await supabase
+    .from("course_modules")
+    .select("id, course_id, title, description, position")
+    .eq("course_id", course.id)
+    .order("position", { ascending: true });
+
+  const { data: lessons } = await supabase
+    .from("lessons")
+    .select("id, module_id, title, description, video_embed, position, is_locked")
+    .order("position", { ascending: true });
+
+  const { data: progress } = await supabase
+    .from("lesson_progress")
+    .select("lesson_id, completed");
+
+  const completedSet = new Set(
+    (progress ?? []).filter((p) => p.completed).map((p) => p.lesson_id)
+  );
+
+  const moduleList: ModuleWithLessons[] = (modules ?? []).map(
+    (m: CourseModule) => ({
+      ...m,
+      lessons: ((lessons ?? []) as Lesson[])
+        .filter((l) => l.module_id === m.id)
+        .map((l) => ({ ...l, completed: completedSet.has(l.id) })),
+    })
+  );
+
+  const allLessons = moduleList.flatMap((m) => m.lessons);
+  const completedLessons = allLessons.filter((l) => l.completed).length;
+  const nextLesson = allLessons.find((l) => !l.completed) ?? allLessons[0] ?? null;
+
+  return {
+    course: storeCourse,
+    enrolled: true,
+    modules: moduleList,
+    totalLessons: allLessons.length,
+    completedLessons,
+    nextLesson: nextLesson
+      ? { id: nextLesson.id, title: nextLesson.title }
+      : null,
+  };
+}
+
 /**
  * Carrega o curso principal do aluno com módulos, aulas e progresso.
  * RLS garante que só retorna dados se o aluno tiver matrícula ativa.
