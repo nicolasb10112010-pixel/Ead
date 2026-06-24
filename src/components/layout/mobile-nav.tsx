@@ -61,11 +61,13 @@ export function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm",
+                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all",
                       active
                         ? "bg-primary/15 text-foreground"
-                        : "text-muted hover:bg-surface-2",
-                      item.locked && "opacity-60"
+                        : item.locked
+                        ? // IA 2 e IA 3 (locked): destaque vermelho de bloqueio
+                          "text-muted opacity-70 hover:bg-[#f87171]/10 hover:text-[#f87171] hover:opacity-100"
+                        : "text-muted hover:bg-surface-2"
                     )}
                   >
                     <Icon className="h-4 w-4" />

@@ -28,11 +28,13 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
               href={item.href}
               aria-disabled={item.locked}
               className={cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
+                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all",
                 active
                   ? "bg-primary/15 text-foreground"
-                  : "text-muted hover:bg-surface-2 hover:text-foreground",
-                item.locked && "opacity-60"
+                  : item.locked
+                  ? // IA 2 e IA 3 (locked): hover vermelho de bloqueio
+                    "text-muted opacity-70 hover:bg-[#f87171]/10 hover:text-[#f87171] hover:opacity-100 hover:ring-1 hover:ring-[#f87171]/40"
+                  : "text-muted hover:bg-surface-2 hover:text-foreground"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />

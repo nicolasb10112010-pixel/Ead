@@ -17,6 +17,9 @@ type Status =
 
 const PUBLIC_KEY = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY ?? "";
 
+// Garante que o SDK do Mercado Pago seja inicializado uma única vez.
+let mpInitialized = false;
+
 export function CreditsCheckout({
   orderId,
   amountCents,
@@ -139,7 +142,11 @@ function BrickCheckout({
     let mounted = true;
     (async () => {
       const mod = await import("@mercadopago/sdk-react");
-      mod.initMercadoPago(PUBLIC_KEY, { locale: "pt-BR" });
+      // Inicializa o SDK apenas uma vez (evita reinit em HMR/re-render).
+      if (!mpInitialized) {
+        mod.initMercadoPago(PUBLIC_KEY, { locale: "pt-BR" });
+        mpInitialized = true;
+      }
       if (mounted)
         setBrick(() => mod.Payment as React.ComponentType<Record<string, unknown>>);
     })();
