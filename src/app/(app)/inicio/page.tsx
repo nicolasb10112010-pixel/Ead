@@ -3,18 +3,25 @@ import { PlayCircle, Trophy, Coins, TrendingUp, Zap } from "lucide-react";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AiCard } from "@/components/ia/ai-card";
+import { CourseCard } from "@/components/courses/course-card";
 import { ProgressBar } from "@/components/lessons/progress-bar";
 import { AI_AGENTS } from "@/lib/constants";
 import { getAccountData } from "@/lib/account";
-import { getCourseOverview } from "@/lib/courses";
+import { getCourseOverview, getCoursesForStore } from "@/lib/courses";
 
 export const metadata = { title: "Início — Trilogia do Sucesso" };
 
 export default async function InicioPage() {
-  const [account, overview] = await Promise.all([
+  const [account, overview, allCourses] = await Promise.all([
     getAccountData(),
     getCourseOverview(),
+    getCoursesForStore(),
   ]);
+
+  // Mostra primeiro os cursos ainda não comprados (vitrine de venda).
+  const courses = [...allCourses].sort(
+    (a, b) => Number(a.enrolled) - Number(b.enrolled)
+  );
 
   const fullName = account?.fullName ?? "aluno";
   const credits = account?.credits ?? 0;
@@ -131,6 +138,23 @@ export default async function InicioPage() {
           ))}
         </div>
       </div>
+
+      {/* Cursos disponíveis para você */}
+      {courses.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Cursos disponíveis para você</h2>
+            <Link href="/cursos" className="text-sm text-muted hover:text-foreground">
+              Ver todos
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.slice(0, 3).map((c) => (
+              <CourseCard key={c.id} course={c} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,12 +11,14 @@ export type StoreCourse = {
   slug: string;
   title: string;
   description: string | null;
-  cover_url: string | null;
+  shortDescription: string | null;
+  coverImageUrl: string | null;
   price_cents: number;
   enrolled: boolean;
+  progressPct: number;
 };
 
-/** Catálogo: todos os cursos publicados + se o aluno já tem cada um. */
+/** Catálogo: todos os cursos publicados + se o aluno já tem + progresso. */
 export async function getCoursesForStore(): Promise<StoreCourse[]> {
   const supabase = await createClient();
   const {
@@ -26,7 +28,9 @@ export async function getCoursesForStore(): Promise<StoreCourse[]> {
 
   const { data: courses } = await supabase
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents, position")
+    .select(
+      "id, slug, title, description, short_description, cover_image_url, price_cents, position"
+    )
     .eq("is_published", true)
     .order("position", { ascending: true });
 
@@ -38,16 +42,54 @@ export async function getCoursesForStore(): Promise<StoreCourse[]> {
   const enrolledSet = new Set(
     (enrolls ?? []).filter((e) => e.status === "active").map((e) => e.course_id)
   );
+  const enrolledIds = [...enrolledSet];
 
-  return (courses ?? []).map((c) => ({
-    id: c.id,
-    slug: c.slug,
-    title: c.title,
-    description: c.description,
-    cover_url: c.cover_url,
-    price_cents: c.price_cents,
-    enrolled: enrolledSet.has(c.id),
-  }));
+  // Progresso por curso (só dos matriculados).
+  const progress = new Map<string, { total: number; done: number }>();
+  if (enrolledIds.length > 0) {
+    const { data: mods } = await supabase
+      .from("course_modules")
+      .select("id, course_id")
+      .in("course_id", enrolledIds);
+    const modToCourse = new Map((mods ?? []).map((m) => [m.id, m.course_id]));
+    const modIds = (mods ?? []).map((m) => m.id);
+
+    if (modIds.length > 0) {
+      const { data: lessons } = await supabase
+        .from("lessons")
+        .select("id, module_id")
+        .in("module_id", modIds);
+      const { data: prog } = await supabase
+        .from("lesson_progress")
+        .select("lesson_id, completed");
+      const doneSet = new Set(
+        (prog ?? []).filter((p) => p.completed).map((p) => p.lesson_id)
+      );
+      for (const l of lessons ?? []) {
+        const cid = modToCourse.get(l.module_id);
+        if (!cid) continue;
+        const acc = progress.get(cid) ?? { total: 0, done: 0 };
+        acc.total += 1;
+        if (doneSet.has(l.id)) acc.done += 1;
+        progress.set(cid, acc);
+      }
+    }
+  }
+
+  return (courses ?? []).map((c) => {
+    const p = progress.get(c.id);
+    return {
+      id: c.id,
+      slug: c.slug,
+      title: c.title,
+      description: c.description,
+      shortDescription: c.short_description,
+      coverImageUrl: c.cover_image_url,
+      price_cents: c.price_cents,
+      enrolled: enrolledSet.has(c.id),
+      progressPct: p && p.total ? Math.round((p.done / p.total) * 100) : 0,
+    };
+  });
 }
 
 /**
@@ -70,7 +112,9 @@ export async function getCourseDetail(slug: string): Promise<{
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, slug, title, description, cover_url, price_cents")
+    .select(
+      "id, slug, title, description, short_description, cover_image_url, price_cents"
+    )
     .eq("slug", slug)
     .maybeSingle();
   if (!course) return null;
@@ -88,9 +132,11 @@ export async function getCourseDetail(slug: string): Promise<{
     slug: course.slug,
     title: course.title,
     description: course.description,
-    cover_url: course.cover_url,
+    shortDescription: course.short_description,
+    coverImageUrl: course.cover_image_url,
     price_cents: course.price_cents,
     enrolled,
+    progressPct: 0,
   };
 
   if (!enrolled) {

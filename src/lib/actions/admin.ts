@@ -136,6 +136,35 @@ export async function adminCreateCourse(input: {
   return { ok: true, slug };
 }
 
+/** Admin edita um curso: preço, capa, descrição e publicação. */
+export async function adminUpdateCourse(input: {
+  courseId: string;
+  priceCents?: number;
+  coverImageUrl?: string;
+  shortDescription?: string;
+  isPublished?: boolean;
+}) {
+  let admin;
+  try {
+    ({ admin } = await requireAdmin());
+  } catch {
+    return { ok: false, error: "Acesso negado." };
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (input.priceCents !== undefined)
+    patch.price_cents = Math.max(0, Math.floor(input.priceCents));
+  if (input.coverImageUrl !== undefined)
+    patch.cover_image_url = input.coverImageUrl.trim() || null;
+  if (input.shortDescription !== undefined)
+    patch.short_description = input.shortDescription.trim() || null;
+  if (input.isPublished !== undefined) patch.is_published = input.isPublished;
+
+  await admin.from("courses").update(patch).eq("id", input.courseId);
+  revalidatePath("/admin/conteudo");
+  return { ok: true };
+}
+
 /** Admin cria um módulo. */
 export async function adminCreateModule(courseId: string, title: string) {
   if (!title.trim()) return { ok: false, error: "Informe o título." };

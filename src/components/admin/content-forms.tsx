@@ -9,7 +9,104 @@ import {
   adminCreateLesson,
   adminUpdateLesson,
   adminCreateCourse,
+  adminUpdateCourse,
 } from "@/lib/actions/admin";
+
+export function CourseSettingsForm({
+  courseId,
+  priceCents,
+  coverImageUrl,
+  shortDescription,
+  isPublished,
+}: {
+  courseId: string;
+  priceCents: number;
+  coverImageUrl: string;
+  shortDescription: string;
+  isPublished: boolean;
+}) {
+  const router = useRouter();
+  const [price, setPrice] = useState((priceCents / 100).toString());
+  const [cover, setCover] = useState(coverImageUrl);
+  const [shortDesc, setShortDesc] = useState(shortDescription);
+  const [published, setPublished] = useState(isPublished);
+  const [pending, start] = useTransition();
+  const [saved, setSaved] = useState(false);
+
+  function save(nextPublished = published) {
+    start(async () => {
+      const reais = parseFloat(price.replace(",", ".")) || 0;
+      await adminUpdateCourse({
+        courseId,
+        priceCents: Math.round(reais * 100),
+        coverImageUrl: cover,
+        shortDescription: shortDesc,
+        isPublished: nextPublished,
+      });
+      setSaved(true);
+      router.refresh();
+      setTimeout(() => setSaved(false), 2000);
+    });
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="text-xs text-muted">Preço (R$)</label>
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 h-10 text-sm outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted">Descrição curta</label>
+          <input
+            value={shortDesc}
+            onChange={(e) => setShortDesc(e.target.value)}
+            placeholder="Resumo do curso"
+            className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 h-10 text-sm outline-none"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-muted">URL da capa (cover_image_url)</label>
+        <input
+          value={cover}
+          onChange={(e) => setCover(e.target.value)}
+          placeholder="https://.../capa.jpg"
+          className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-3 h-10 text-sm outline-none"
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button size="sm" onClick={() => save()} disabled={pending}>
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {saved ? "Salvo!" : "Salvar"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setPublished(!published);
+            save(!published);
+          }}
+          disabled={pending}
+        >
+          {published ? "Despublicar" : "Publicar"}
+        </Button>
+        <span
+          className={`rounded-full px-2.5 py-1 text-[11px] ${
+            published ? "bg-success/15 text-success" : "bg-surface-2 text-muted"
+          }`}
+        >
+          {published ? "Publicado" : "Rascunho"}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function CreateCourseForm() {
   const router = useRouter();

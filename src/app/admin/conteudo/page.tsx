@@ -5,6 +5,7 @@ import {
   AddLessonForm,
   LessonEditor,
   CreateCourseForm,
+  CourseSettingsForm,
 } from "@/components/admin/content-forms";
 import { requireAdmin } from "@/lib/admin";
 import { formatBRL } from "@/lib/constants";
@@ -22,7 +23,9 @@ export default async function AdminConteudo({
 
   const { data: courses } = await admin
     .from("courses")
-    .select("id, slug, title, price_cents, is_published")
+    .select(
+      "id, slug, title, price_cents, is_published, cover_image_url, short_description"
+    )
     .order("position", { ascending: true });
 
   const list = courses ?? [];
@@ -86,6 +89,18 @@ export default async function AdminConteudo({
         </Card>
       ) : (
         <>
+          {/* Configurações do curso: preço, capa, descrição, publicação */}
+          <Card>
+            <CardTitle className="mb-3">Configurações de “{selected.title}”</CardTitle>
+            <CourseSettingsForm
+              courseId={selected.id}
+              priceCents={selected.price_cents}
+              coverImageUrl={selected.cover_image_url ?? ""}
+              shortDescription={selected.short_description ?? ""}
+              isPublished={selected.is_published}
+            />
+          </Card>
+
           <Card>
             <CardTitle>Adicionar módulo em “{selected.title}”</CardTitle>
             <div className="mt-3">

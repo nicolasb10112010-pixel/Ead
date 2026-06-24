@@ -2,15 +2,22 @@ import { Zap, Coins, Star } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardTitle } from "@/components/ui/card";
 import { SelectPackageButton } from "@/components/credits/select-package-button";
+import { CourseCard } from "@/components/courses/course-card";
 import { CREDIT_PACKAGES, formatBRL } from "@/lib/constants";
 import { getAccountData } from "@/lib/account";
+import { getCoursesForStore } from "@/lib/courses";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Comprar créditos — Trilogia do Sucesso" };
 
 export default async function CreditosPage() {
-  const account = await getAccountData();
+  const [account, allCourses] = await Promise.all([
+    getAccountData(),
+    getCoursesForStore(),
+  ]);
   const credits = account?.credits ?? 0;
+  // Cursos ainda não comprados (vitrine separada dos créditos).
+  const courses = allCourses.filter((c) => !c.enrolled);
 
   return (
     <div>
@@ -63,6 +70,22 @@ export default async function CreditosPage() {
           </Card>
         ))}
       </div>
+
+      {/* Seção SEPARADA: cursos (conteúdo), distinta dos créditos (IA). */}
+      {courses.length > 0 && (
+        <section className="mt-12 border-t border-border pt-8">
+          <h2 className="text-lg font-semibold">Adicione novos cursos à sua conta</h2>
+          <p className="mt-1 text-sm text-muted">
+            Cursos são conteúdos/aulas — diferentes dos créditos, que servem para
+            usar a IA.
+          </p>
+          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((c) => (
+              <CourseCard key={c.id} course={c} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

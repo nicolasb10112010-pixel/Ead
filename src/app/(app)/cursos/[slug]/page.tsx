@@ -1,11 +1,20 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Circle, Lock, PlayCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Circle,
+  Lock,
+  PlayCircle,
+  GraduationCap,
+} from "lucide-react";
 import { Card, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/lessons/progress-bar";
 import { BuyCourseButton } from "@/components/courses/buy-course-button";
-import { getCourseDetail } from "@/lib/courses";
+import { CourseCard } from "@/components/courses/course-card";
+import { getCourseDetail, getCoursesForStore } from "@/lib/courses";
 import { formatBRL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +31,7 @@ export default async function CursoDetailPage({
     data;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Link
         href="/cursos"
         className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
@@ -30,37 +39,65 @@ export default async function CursoDetailPage({
         <ArrowLeft className="h-4 w-4" /> Voltar para cursos
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-semibold">{course.title}</h1>
-        {course.description && (
-          <p className="mt-1 text-sm text-muted">{course.description}</p>
-        )}
-      </div>
-
-      {/* Não matriculado → tela de compra */}
+      {/* Não matriculado → bloqueio com capa borrada */}
       {!enrolled ? (
-        <Card className="flex flex-col items-center py-10 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted">
-            <Lock className="h-6 w-6" />
+        <Card className="overflow-hidden p-0">
+          <div className="relative aspect-[21/9] w-full overflow-hidden">
+            {course.coverImageUrl ? (
+              <Image
+                src={course.coverImageUrl}
+                alt={course.title}
+                fill
+                unoptimized
+                className="object-cover blur-md scale-105"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-primary/30 via-surface-2 to-accent/20 blur-[2px]" />
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 px-6 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white backdrop-blur-sm">
+                <Lock className="h-6 w-6" />
+              </div>
+              <h1 className="mt-1 text-2xl font-bold text-white">{course.title}</h1>
+            </div>
           </div>
-          <CardTitle className="mt-4">Curso bloqueado</CardTitle>
-          <CardDescription className="mt-1 max-w-sm">
-            Compre este curso para liberar todas as aulas.
-          </CardDescription>
-          <p className="mt-4 text-2xl font-bold">
-            {course.price_cents > 0 ? formatBRL(course.price_cents) : "Gratuito"}
-          </p>
-          {course.price_cents > 0 && (
-            <BuyCourseButton
-              slug={course.slug}
-              label="Comprar curso"
-              size="lg"
-              className="mt-4 w-full max-w-xs"
-            />
-          )}
+          <div className="flex flex-col items-center p-6 text-center">
+            <CardDescription className="max-w-md">
+              Esse curso ainda não está liberado na sua conta. Compre agora para
+              acessar as aulas.
+            </CardDescription>
+            {course.description && (
+              <p className="mt-3 max-w-md text-sm text-muted">
+                {course.description}
+              </p>
+            )}
+            <p className="mt-4 text-2xl font-bold">
+              {course.price_cents > 0 ? formatBRL(course.price_cents) : "Gratuito"}
+            </p>
+            {course.price_cents > 0 && (
+              <BuyCourseButton
+                slug={course.slug}
+                label="Comprar agora"
+                size="lg"
+                className="mt-4 w-full max-w-xs"
+              />
+            )}
+          </div>
         </Card>
       ) : (
         <>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold">{course.title}</h1>
+              {course.description && (
+                <p className="text-sm text-muted">{course.description}</p>
+              )}
+            </div>
+          </div>
+
           {/* Continuar + progresso */}
           {nextLesson && (
             <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -120,6 +157,26 @@ export default async function CursoDetailPage({
           </div>
         </>
       )}
+
+      {/* Outros cursos disponíveis (não comprados) */}
+      <OtherCourses excludeSlug={slug} />
     </div>
+  );
+}
+
+async function OtherCourses({ excludeSlug }: { excludeSlug: string }) {
+  const all = await getCoursesForStore();
+  const others = all.filter((c) => !c.enrolled && c.slug !== excludeSlug);
+  if (others.length === 0) return null;
+
+  return (
+    <section className="border-t border-border pt-8">
+      <h2 className="mb-4 text-lg font-semibold">Outros cursos disponíveis</h2>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {others.slice(0, 3).map((c) => (
+          <CourseCard key={c.id} course={c} />
+        ))}
+      </div>
+    </section>
   );
 }
