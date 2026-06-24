@@ -1,13 +1,16 @@
-import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
+import { LoginBackground } from "@/components/auth/login-background";
 import { APP_NAME, EXTERNAL_CHECKOUT_URL } from "@/lib/constants";
 
 export const metadata = { title: `Entrar — ${APP_NAME}` };
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-screen flex items-center justify-center px-4 py-10">
+      {/* Fundo animado de partículas (atrás do card, sem capturar cliques) */}
+      <LoginBackground />
+
+      <div className="relative z-10 w-full max-w-md">
         <div className="flex items-center gap-3 mb-8 justify-center">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent" />
           <span className="text-lg font-semibold tracking-tight">
@@ -15,7 +18,7 @@ export default function LoginPage() {
           </span>
         </div>
 
-        <div className="rounded-3xl border border-border bg-surface/70 backdrop-blur-md p-8 shadow-2xl">
+        <div className="rounded-3xl border border-border bg-surface/80 backdrop-blur-xl p-8 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.6),0_0_70px_-25px_rgba(56,189,248,0.45)]">
           <h1 className="text-2xl font-semibold text-center">
             Bem-vindo à Trilogia do Sucesso
           </h1>
@@ -42,12 +45,6 @@ export default function LoginPage() {
             </a>
           </div>
         </div>
-
-        <p className="mt-6 text-center text-xs text-muted">
-          <Link href="/recuperar-senha" className="hover:underline">
-            Esqueci minha senha
-          </Link>
-        </p>
       </div>
     </div>
   );
